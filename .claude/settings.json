@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./verification/**)",
+      "Edit(./verification/**)",
+      "Write(./verification/**)",
+      "Glob(./verification/**)",
+      "Grep(./verification/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/log_access.py\""
+          }
+        ]
+      }
+    ]
+  }
+}
