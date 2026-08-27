@@ -4,7 +4,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, StrictBool
 
 TITLE_MAX_LENGTH = 100
 STATIC_DIR = Path(__file__).parent / "static"
@@ -14,6 +14,10 @@ app = FastAPI(title="Todo")
 
 class TodoIn(BaseModel):
     title: str
+
+
+class TodoPatch(BaseModel):
+    done: StrictBool
 
 
 class Todo(BaseModel):
@@ -37,6 +41,19 @@ class TodoStore:
 
     def list(self) -> list[Todo]:
         return list(self._todos)
+
+    def get(self, todo_id: int) -> Todo | None:
+        for todo in self._todos:
+            if todo.id == todo_id:
+                return todo
+        return None
+
+    def set_done(self, todo_id: int, done: bool) -> Todo | None:
+        todo = self.get(todo_id)
+        if todo is None:
+            return None
+        todo.done = done
+        return todo
 
 
 store = TodoStore()
@@ -68,3 +85,11 @@ def list_todos() -> list[Todo]:
 @app.post("/api/todos", status_code=201)
 def create_todo(body: TodoIn) -> Todo:
     return store.add(normalize_title(body.title))
+
+
+@app.patch("/api/todos/{todo_id}")
+def update_todo(todo_id: int, body: TodoPatch) -> Todo:
+    todo = store.set_done(todo_id, body.done)
+    if todo is None:
+        raise HTTPException(status_code=404, detail="todo not found")
+    return todo
